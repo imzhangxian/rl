@@ -1,10 +1,10 @@
 import numpy as np
 import math
 
-REQ_LOC1_LAMBDA = 3
-REQ_LOC2_LAMBDA = 4
-RET_LOC1_LAMBDA = 3
-RET_LOC2_LAMBDA = 2
+AVG_REQ1 = 3
+AVG_REQ2 = 4
+AVG_RET1 = 3
+AVG_RET2 = 2
 GAMMA = 0.9
 MAX_ITERS = 10
 MAX_CAR_NUM = 20
@@ -21,17 +21,17 @@ def compute_value(cars_loc1, cars_loc2, a):
   # available cars at locations 1 and 2 after moving action
   available_1 = cars_loc1 - a
   available_2 = cars_loc2 + a
-  for requested_1 in range(0, MAX_CAR_NUM + 1, 1):
-    for requested_2 in range(0, MAX_CAR_NUM + 1, 1):
+  for requested_1 in range(0, AVG_REQ1 * 4 + 1, 1):
+    for requested_2 in range(0, AVG_REQ2 * 4 + 1, 1):
       # each possibility of rented car numbers at location 1 and 2 (0 - 2 * mu)
-      for returned_loc1 in range(0, MAX_CAR_NUM + 1, 1):
-        for returned_loc2 in range(0, MAX_CAR_NUM + 1, 1):
+      for returned_loc1 in range(0, AVG_RET1 * 4 + 1, 1):
+        for returned_loc2 in range(0, AVG_RET2 * 4 + 1, 1):
           # add up returned cars in each location ( 0 - 2 * mu)
           probability = \
-            prob(requested_1, REQ_LOC1_LAMBDA) * \
-            prob(requested_2, REQ_LOC2_LAMBDA) * \
-            prob(returned_loc1, RET_LOC1_LAMBDA) * \
-            prob(returned_loc2, RET_LOC2_LAMBDA)
+            prob(requested_1, AVG_REQ1) * \
+            prob(requested_2, AVG_REQ2) * \
+            prob(returned_loc1, AVG_RET1) * \
+            prob(returned_loc2, AVG_RET2)
           reward = min(available_1, requested_1) * 10 \
             + min(available_2, requested_2) * 10 \
             - abs(a) * 2
@@ -73,18 +73,19 @@ def improve_policy():
     # for each state
     for cars_loc1 in range(MAX_CAR_NUM + 1):
       for cars_loc2 in range(MAX_CAR_NUM + 1):
-        a = policies[cars_loc1][cars_loc2]
+        pi_old = policies[cars_loc1][cars_loc2]
         new_values = []
         max_cars_to_move = min(min(cars_loc1, 5), MAX_CAR_NUM - cars_loc2)
         min_cars_to_move = - min(min(cars_loc2, 5), MAX_CAR_NUM - cars_loc1)
         # for each action
         for a in range(min_cars_to_move, max_cars_to_move + 1, 1):
-          # update value of current state
+          # update value of each action
           new_values.append(compute_value(cars_loc1, cars_loc2, a))
         if (len(new_values) > 0):
+          # find the optimal: argmax
           pi = np.argmax(new_values) + min_cars_to_move
           policies[cars_loc1][cars_loc2] = pi
-        if (a != pi):
+        if (pi_old != pi):
           policy_stable = False
           unstable += 1
     if (policy_stable):
