@@ -39,7 +39,7 @@ TRACK = np.flip(np.array([
 TRACK_DIM = TRACK.shape
 ACTIONS = np.array([[1, 1], [1, 0], [1, -1], [0, 1], [0, 0], [0, -1], [-1, 1], [-1, 0], [-1, -1]])
 MAX_VELOCITY = 5
-TRAINING_EPISODES = 10000
+TRAINING_EPISODES = 30000
 EPSILON = 0.1
 
 # policies = np.ones(TRACK_DIM, dtype=int) * 8 # same dimension as track
@@ -121,7 +121,7 @@ def epsilon_soft(state):
         else:
             a = policies[state]
     else:
-        a = math.floor(np.random.random() * 9)
+        a = 0 # math.floor(np.random.random() * 9)
         # policies[state] = a
     return a
 
@@ -130,7 +130,7 @@ def select_greedy(state):
     if state in policies:
         a = policies[state]
     else:
-        a = math.floor(np.random.random() * 9)
+        a = 0 # math.floor(np.random.random() * 9)
         # policies[state] = a
     return a
 
@@ -167,15 +167,19 @@ def gen_episode(h_start, greedy=False):
 def monte_carlo():
     # run episodes as defined
     for k in range(TRAINING_EPISODES):
+        if k % 1000 == 0:
+            print('going through', k, 'th episode')
         # generate episode from random start point
         h_start = math.floor(np.random.random() * 6 + 3)
         episode = gen_episode(h_start)
         # find last return
-        final_ret = episode[list(episode)[-1]]
+        # print(episode)
+        q_last = episode[list(episode)[-1]]
+        final_ret = q_last[list(q_last)[-1]]
         # for each (s, a) = g
         for state in episode:
             for action in episode[state]:
-                g = episode[state][action]
+                g = final_ret - episode[state][action]
                 returns = action_values[state][action] \
                     if state in action_values and action in action_values[state] \
                     else []
