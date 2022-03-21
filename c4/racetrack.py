@@ -39,8 +39,8 @@ TRACK = np.flip(np.array([
 TRACK_DIM = TRACK.shape
 ACTIONS = np.array([[1, 1], [1, 0], [1, -1], [0, 1], [0, 0], [0, -1], [-1, 1], [-1, 0], [-1, -1]])
 MAX_VELOCITY = 5
-TRAINING_EPISODES = 30000
-EPSILON = 0.1
+TRAINING_EPISODES = 50000
+EPS = 0.5
 
 # policies = np.ones(TRACK_DIM, dtype=int) * 8 # same dimension as track
 policies = {}
@@ -113,22 +113,14 @@ def race(s, v):
         h_togo = 0
     return v_cur, h_cur, r, finished
 
-def epsilon_soft(state):
+def epsilon_soft(state, epsilon):
     # implement epsilon soft policy
     if state in policies:
-        if np.random.random() > 0.9:
+        if np.random.random() >= (1 - epsilon):
             a = math.floor(np.random.random() * 9)
+            # print('exploring policy for', state, 'with', a, 'instead of greedy policy', policies[state])
         else:
             a = policies[state]
-    else:
-        a = 0 # math.floor(np.random.random() * 9)
-        # policies[state] = a
-    return a
-
-def select_greedy(state):
-    # implement epsilon soft policy
-    if state in policies:
-        a = policies[state]
     else:
         a = 0 # math.floor(np.random.random() * 9)
         # policies[state] = a
@@ -148,7 +140,7 @@ def gen_episode(h_start, greedy=False):
         # calculate state index
         state_index = (s[0], s[1], v[0], v[1])
         # pick action if in policy, otherwise apply a random policy
-        a = select_greedy(state_index) if greedy else epsilon_soft(state_index)
+        a = epsilon_soft(state_index, 0 if greedy else EPS)
         # adjust speed
         v_next = adjust_speed(v, a)
         # calculate next position
@@ -180,12 +172,14 @@ def monte_carlo():
         for state in episode:
             for action in episode[state]:
                 g = final_ret - episode[state][action]
-                returns = action_values[state][action] \
-                    if state in action_values and action in action_values[state] \
-                    else []
-                returns.append(g)
-                action_values[state] = {}
-                action_values[state][action] = returns
+                if state in action_values:
+                    if action in action_values[state]:
+                        action_values[state][action].append(g)
+                    else:
+                        action_values[state][action] = [g]
+                else:
+                    action_values[state] = {}
+                    action_values[state][action] = [g]
 
         # policy improvement: for each state s, find best action a
         for state in action_values:
@@ -198,9 +192,16 @@ def monte_carlo():
                 policies[state] = actions[np.argmax(values)]
     return None
 
+def temporal_diff():
+    #
+    return None
+
 monte_carlo()
 # print('action values: ', action_values)
 # print('policies', policies)
 
-episode = gen_episode(4, True)
-print(episode)
+# TEST with greedy policy
+print('******************** Generate a TEST episode with GREEDY policy ********************')
+for start_point in range(4, 9):
+    episode = gen_episode(start_point, True)
+    print(episode)
