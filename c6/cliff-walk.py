@@ -1,3 +1,5 @@
-# resolve windy gridworld with SARSA
+# resolve Cliff walk problem with Q-Learning
 import numpy as np
 import math
+
+
