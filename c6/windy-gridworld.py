@@ -11,7 +11,7 @@ WIND_END = 8
 STRONG_WIND_START = 6
 STRONG_WIND_END = 7
 
-MAX_STEPS = 8000
+MAX_STEPS = 16000
 EPSILON = 0.1
 ALPHA = 0.5
 GAMMA = 1
@@ -23,12 +23,12 @@ policies = {}
 action_values = {}
 
 # standard move
-actions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-
-# King's move
 # actions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 
-ACTION_NUMBERS = len(actions)
+# King's move
+actions = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
+
+ACTION_NUMBER = len(actions)
 
 def wind(state):
   s_v, s_h = state
@@ -39,23 +39,29 @@ def wind(state):
       w = 2
   return w
 
-def move(state, action):
-  a = actions[action]
+def compute_dest(state, action_index):
+  a = actions[action_index]
   next_v = max(0, min(WORLD_HEIGHT - 1, state[0] + a[0] + wind(state)))
   next_h = max(0, min(WORLD_WIDTH - 1, state[1] + a[1]))
-  reward = 0 if (next_v, next_h) == END_POINT else -1
-  return (next_v, next_h), reward
+  return (next_v, next_h)
+
+def valid_actions(state):
+  valid_actions = []
+  for ai in range(ACTION_NUMBER):
+    s = compute_dest(state, ai)
+    if s != state:
+      valid_actions.append(ai)
+  return valid_actions
 
 def select_action(state, epsilon):
-  # implement epsilon soft policy 
-  # (TODO check if same as epsilon greedy)
+  va = valid_actions(state)
+  a = va[math.floor(np.random.random() * len(va))]
+  # implement epsilon soft policy
   if state in policies:
       if np.random.random() < epsilon:
-          a = math.floor(np.random.random() * ACTION_NUMBERS)
+          a = va[math.floor(np.random.random() * len(va))]
       else:
           a = policies[state]
-  else:
-      a = math.floor(np.random.random() * ACTION_NUMBERS)
   return a
 
 def get_action_value(state, action):
@@ -64,6 +70,11 @@ def get_action_value(state, action):
     if action in action_values[state]:
       value = action_values[state][action]
   return value
+
+def move(state, action_index):
+  next_v, next_h = compute_dest(state, action_index)
+  reward = 0 if (next_v, next_h) == END_POINT else -1
+  return (next_v, next_h), reward
 
 def update(state, action, q):
   # update action values
@@ -77,7 +88,6 @@ def update(state, action, q):
   # update policy
   policies[state] = a_opt
   return None
-
 
 def temporal_diff():
   # REPEAT at least N steps
@@ -110,16 +120,16 @@ def temporal_diff():
   return None
 
 # generate a test episode with learned policy
-def run_episode(verbose=False):
+def run_episode(epsilon=0, verbose=False, max_steps=100):
   t = 0
   success = False
   s = START_POINT
-  a = select_action(s, EPSILON)
+  a = select_action(s, epsilon)
   print('Test: start from state', s, 'action', a)
   # for each step
   while True:
     s, r = move(s, a)
-    a = select_action(s, EPSILON)
+    a = select_action(s, epsilon)
     t += 1
     if verbose: 
       print('state', s, 'action', a)
@@ -127,7 +137,7 @@ def run_episode(verbose=False):
     if s == END_POINT:
       success = True
       break
-    if t > MAX_STEPS:
+    if t > max_steps:
       print('FAILED to reach goal after', t, 'steps')
       break
   if success:
@@ -140,4 +150,4 @@ if True:
   print(policies)
   print(action_values)
 
-run_episode()
+run_episode(epsilon=0.1, verbose=True)
