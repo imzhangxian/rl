@@ -23,10 +23,10 @@ policies = {}
 action_values = {}
 
 # standard move
-# actions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+actions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 
 # King's move
-actions = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
+# actions = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
 
 ACTION_NUMBER = len(actions)
 
@@ -108,7 +108,7 @@ def temporal_diff():
       q = get_action_value(s, a)
       q += ALPHA * (r + GAMMA * get_action_value(s_next, a_next) - q)
       update(s, a, q)
-      # go to next state with next action
+      # go to net state with next action
       s, a = s_next, a_next
       # print('state', s, 'action', a)
       # break if next state is terminal state
